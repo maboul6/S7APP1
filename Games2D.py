@@ -1,6 +1,7 @@
 from pygame.locals import *
 import pygame
-
+from Instructions import *
+from Controller import *
 from Player import *
 from Maze import *
 from Constants import *
@@ -23,13 +24,16 @@ class App:
         self.timer = 0.0
         self.player = Player()
         self.maze = Maze(mazefile)
+        self.controller = Controller(self)
 
     def on_init(self):
         pygame.init()
         self.level = 0
         self.score = 0
         self.timer = 0.0
-        self._display_surf = pygame.display.set_mode((self.windowWidth, self.windowHeight), pygame.HWSURFACE)
+        self._display_surf = pygame.display.set_mode(
+            (self.windowWidth, self.windowHeight), pygame.HWSURFACE
+        )
         self._clock = pygame.time.Clock()
         pygame.display.set_caption("Dungeon Crawler")
         pygame.time.set_timer(pygame.USEREVENT, 10)
@@ -38,8 +42,13 @@ class App:
         self.maze.make_maze_item_lists()
         self._image_surf = pygame.image.load("assets/Images/knight.png")
         self.player.set_position(self.maze.start[0], self.maze.start[1])
-        self.player.set_size(0.9*PLAYER_SIZE*self.maze.tile_size_x, PLAYER_SIZE*self.maze.tile_size_x)
-        self._image_surf = pygame.transform.scale(self._image_surf, self.player.get_size())
+        self.player.set_size(
+            0.9 * PLAYER_SIZE * self.maze.tile_size_x,
+            PLAYER_SIZE * self.maze.tile_size_x,
+        )
+        self._image_surf = pygame.transform.scale(
+            self._image_surf, self.player.get_size()
+        )
 
     def on_keyboard_input(self, keys):
         if keys[K_RIGHT] or keys[K_d]:
@@ -73,29 +82,33 @@ class App:
             # you need to unlock it by providing the correct key
 
         if keys[K_u]:
-            self.maze.unlock_door('first')
+            self.maze.unlock_door("first")
             # returns true if the door is unlocked, false if the answer is incorrect and the door remains locked
             # if the door is unlocked you can pass through it (no visible change... yet)
 
-        if (keys[K_ESCAPE]):
+        if keys[K_ESCAPE]:
             self._running = False
 
     # FONCTION À Ajuster selon votre format d'instruction
     def on_AI_input(self, instruction):
-        if instruction == 'RIGHT':
+        if instruction == Action.RIGHT:
             self.move_player_right()
 
-        if instruction == 'LEFT':
+        if instruction == Action.LEFT:
             self.move_player_left()
 
-        if instruction == 'UP':
+        if instruction == Action.UP:
             self.move_player_up()
 
-        if instruction == 'DOWN':
+        if instruction == Action.DOWN:
             self.move_player_down()
 
     def on_collision(self):
-        return self.on_wall_collision() or self.on_obstacle_collision() or self.on_door_collision()
+        return (
+            self.on_wall_collision()
+            or self.on_obstacle_collision()
+            or self.on_door_collision()
+        )
 
     def move_player_right(self):
         self.player.moveRight()
@@ -212,7 +225,8 @@ class App:
             pygame.event.pump()
             keys = pygame.key.get_pressed()
             self.on_keyboard_input(keys)
-            # self.on_AI_input(instruction)
+            instruction = self.controller.get_instruction(keys=keys)
+            self.on_AI_input(instruction)
             if self.on_coin_collision():
                 self.score += 1
             if self.on_treasure_collision():

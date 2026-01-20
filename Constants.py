@@ -1,4 +1,3 @@
-
 GAME_CLOCK = 60
 
 WIDTH = 1280
@@ -10,16 +9,16 @@ MAX_ATTRIBUTE = 1000
 NUM_ATTRIBUTES = 12
 
 
-BLACK = (0,0,0)
-WHITE = (255,255,255)
-RED = (255,0,0)
-BLUE = (0,0,255)
-GREEN = (0,255,0)
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
 
-COIN = 'C'
-TREASURE = 'T'
-START = 'S'
-EXIT = 'E'
-OBSTACLE = 'O'
-MONSTER = 'M'
-DOOR = 'D'
+COIN = "C"
+TREASURE = "T"
+START = "S"
+EXIT = "E"
+OBSTACLE = "O"
+MONSTER = "M"
+DOOR = "D"
