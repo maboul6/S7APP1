@@ -1,5 +1,7 @@
 from pygame.locals import *
 import pygame
+
+from A_star import a_star_search
 from Instructions import *
 from Controller import *
 from Player import *
@@ -49,6 +51,8 @@ class App:
         self._image_surf = pygame.transform.scale(
             self._image_surf, self.player.get_size()
         )
+        a_Star_best_path = a_star_search(self.maze.maze)
+        self.controller.best_path = a_Star_best_path
 
     def on_keyboard_input(self, keys):
         if keys[K_RIGHT] or keys[K_d]:

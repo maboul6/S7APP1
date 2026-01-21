@@ -52,7 +52,7 @@ class Controller:
     def __init__(self, app=None):
         self.app = app
         self._path_index = 0
-        self.best_path = BEST_PATH
+        self.best_path = None
 
     def get_instruction(self, keys=None, events=None):
         return self.follow_best_path(
