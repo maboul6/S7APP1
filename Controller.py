@@ -1,90 +1,80 @@
 from Instructions import *
 
-position = (0, 0)
-test_end_x = 120
-test_end_y = 200
+BEST_PATH = [
+    (1, 0),
+    (1, 1),
+    (1, 2),
+    (2, 2),
+    (3, 2),
+    (4, 2),
+    (5, 2),
+    (5, 1),
+    (6, 1),
+    (7, 1),
+    (8, 1),
+    (9, 1),
+    (10, 1),
+    (11, 1),
+    (12, 1),
+    (13, 1),
+    (14, 1),
+    (14, 2),
+    (14, 3),
+    (13, 3),
+    (13, 4),
+    (13, 5),
+    (13, 6),
+    (13, 7),
+    (13, 8),
+    (13, 9),
+    (13, 10),
+    (12, 10),
+    (11, 10),
+    (11, 9),
+    (10, 9),
+    (9, 9),
+    (9, 10),
+    (8, 10),
+    (7, 10),
+    (6, 10),
+    (6, 9),
+    (5, 9),
+    (4, 9),
+    (4, 10),
+    (3, 10),
+    (2, 10),
+    (1, 10),
+    (1, 11),
+]
 
 
 class Controller:
     def __init__(self, app=None):
         self.app = app
         self._path_index = 0
+        self.best_path = BEST_PATH
 
     def get_instruction(self, keys=None, events=None):
         return self.follow_best_path(
-            [
-                [1, 0],
-                [1, 1],
-                [1, 2],
-                [2, 2],
-                [3, 2],
-                [4, 2],
-                [5, 2],
-                [5, 1],
-                [6, 1],
-                [7, 1],
-                [8, 1],
-                [9, 1],
-                [10, 1],
-                [11, 1],
-                [12, 1],
-                [13, 1],
-                [14, 1],
-                [14, 2],
-                [14, 3],
-                [13, 3],
-                [13, 4],
-                [13, 5],
-                [13, 6],
-                [13, 7],
-                [13, 8],
-                [13, 9],
-                [13, 10],
-                [12, 10],
-                [11, 10],
-                [11, 9],
-                [10, 9],
-                [9, 9],
-                [9, 10],
-                [8, 10],
-                [7, 10],
-                [6, 10],
-                [6, 9],
-                [5, 9],
-                [4, 9],
-                [4, 10],
-                [3, 10],
-                [2, 10],
-                [1, 10],
-                [1, 11],
-            ],
             self.app.player,
             self.app.maze,
         )
-
-    def test_navigate_to_position(self, player):
-        x, y = player.get_position()
-        if x < test_end_x:
-            return Action.RIGHT
-        if y < test_end_y:
-            return Action.DOWN
-        return None
 
     def tile_to_pixel_center(self, tile, maze):
         # J'ai dit que les tuiles sont en coordonnées [x, y]
         x, y = tile
         return (x + 0.5) * maze.tile_size_x, (y + 0.5) * maze.tile_size_y
 
-    def follow_best_path(self, best_path, player, maze, reach_px=None):
+    def follow_best_path(self, player, maze, reach_px=None):
         """
-        Follow a list of tiles [x, y]. Returns an Action or None.
+        Follow a list of tiles (x, y). Returns an Action or None.
         """
 
         reach_px = 2  # consider the checkpoint hit when within 16 pixels
 
-        while self._path_index < len(best_path):
+        while self._path_index < len(self.best_path):
             target_x, target_y = self.tile_to_pixel_center(
-                best_path[self._path_index], maze
+                self.best_path[self._path_index], maze
             )
             x, y = player.get_position()
             x += player.size_x * 0.5
