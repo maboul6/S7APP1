@@ -2,6 +2,7 @@ from pygame.locals import *
 import pygame
 
 from A_star import a_star_search
+from Crystal import remove_crystal
 from Instructions import *
 from Controller import *
 from Player import *
@@ -80,13 +81,16 @@ class App:
             # returns the number of rounds you win against the monster
             # you need to win all four rounds to beat it
 
-        if keys[K_j]:
-            print(self.maze.look_at_door(self.player, self._display_surf))
+        #if keys[K_j]:
+            #state = self.maze.look_at_door(self.player, self._display_surf)
+            #key = remove_crystal(state)
+            #print(key)
+            #self.maze.unlock_door(key)
             # returns the state of the doors you can currently see
             # you need to unlock it by providing the correct key
 
-        if keys[K_u]:
-            self.maze.unlock_door("first")
+        #if keys[K_u]:
+            #self.maze.unlock_door(key)
             # returns true if the door is unlocked, false if the answer is incorrect and the door remains locked
             # if the door is unlocked you can pass through it (no visible change... yet)
 
@@ -173,6 +177,10 @@ class App:
     def on_door_collision(self):
         for door in self.maze.doorList:
             if self.player.get_rect().colliderect(door.rect):
+                state = self.maze.look_at_door(self.player, self._display_surf)
+                key = remove_crystal(state)
+                print(key)
+                self.maze.unlock_door(key)
                 return True
         return False
 
