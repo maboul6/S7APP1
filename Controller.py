@@ -45,7 +45,6 @@ class Controller:
 
     def drawClosestBricks(self, player, maze, display_surf):
         bricks = self.vision[1]
-        if len(bricks) == 0: return # no obstacles
 
         distances = []
         px, py, w, h  = player.get_rect()
@@ -57,7 +56,10 @@ class Controller:
         )
         vG = (gx - px, gy - py)
         nvG = norm(vG)
+        # draw line to goal
+        pygame.draw.line(display_surf, GREEN, (px, py), (gx, gy), 2)
 
+        if len(bricks) == 0: return # no obstacles
         # calculate distance for all bricks
         for i in range(len(bricks)):
             rx, ry, w, h = bricks[i]
@@ -70,8 +72,6 @@ class Controller:
         # find closest brick
         closestBrick = min(distances, key=lambda item: dot(item[0], nvG))[0]
 
-        # draw line to goal
-        pygame.draw.line(display_surf, GREEN, (px, py), (gx, gy), 2)
 
         # draw lines to each bricks
         for i in range(len(distances)):
@@ -169,24 +169,24 @@ class Controller:
         goalDx = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'goalDx')
         goalDy = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'goalDy')
 
-        moveDirection = ctrl.Consequent(np.linspace(-180, 180, 361), 'moveDirection', defuzzify_method='mom')
+        moveDirection = ctrl.Consequent(np.linspace(0, 360, 361), 'moveDirection', defuzzify_method='mom')
         # down_left  = fuzz.trimf(moveDirection.universe, [-180, -180, -135])
         # down_right = fuzz.trimf(moveDirection.universe, [135, 180, 180])
         # moveDirection['down'] = np.fmax(down_left, down_right)
-        moveDirection['up'] = fuzz.trimf(moveDirection.universe, [-46, 0, 46])
-        moveDirection['right'] = fuzz.trimf(moveDirection.universe, [44, 90, 136])
-        moveDirection['left'] = fuzz.trimf(moveDirection.universe, [-136, -90, -44])
-        moveDirection['down'] = fuzz.trapmf(moveDirection.universe, [-180, -180, -180, -134]) + fuzz.trapmf(moveDirection.universe, [134, 180, 180, 180])
+        moveDirection['up'] = fuzz.trimf(moveDirection.universe, [0, 45, 90])
+        moveDirection['right'] = fuzz.trimf(moveDirection.universe, [90, 135, 180])
+        moveDirection['down'] = fuzz.trimf(moveDirection.universe, [180, 225, 270])
+        moveDirection['left'] = fuzz.trimf(moveDirection.universe, [270, 315, 360])
         # moveDirection['down'] = fuzz.trapmf(moveDirection.universe, [134, 180, 180, 180])
 
 
-        goalDx['left'] = fuzz.trimf(goalDx.universe, [-self.perception_distance, -self.perception_distance, 0])
-        goalDx['center'] = fuzz.trimf(goalDx.universe, [-self.perception_distance/2, 0, self.perception_distance/2])
-        goalDx['right'] = fuzz.trimf(goalDx.universe, [0, self.perception_distance, self.perception_distance])
+        goalDx['left'] = fuzz.trimf(goalDx.universe, [-self.perception_distance, -self.perception_distance, self.perception_distance/4])
+        goalDx['center'] = fuzz.trimf(goalDx.universe, [-self.perception_distance/8, 0, self.perception_distance/8])
+        goalDx['right'] = fuzz.trimf(goalDx.universe, [-self.perception_distance/4, self.perception_distance, self.perception_distance])
 
-        goalDy['up'] = fuzz.trimf(goalDy.universe, [-self.perception_distance, -self.perception_distance, 0])
-        goalDy['center'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/2, 0, self.perception_distance/2])
-        goalDy['down'] = fuzz.trimf(goalDy.universe, [0, self.perception_distance, self.perception_distance])
+        goalDy['up'] = fuzz.trimf(goalDy.universe, [-self.perception_distance, -self.perception_distance, self.perception_distance/4])
+        goalDy['center'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/8, 0, self.perception_distance/8])
+        goalDy['down'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/4, self.perception_distance, self.perception_distance])
 
         rules = []
         rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'], consequent=moveDirection['left'])) # diag
@@ -195,7 +195,7 @@ class Controller:
 
         rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'], consequent=moveDirection['up']))
         rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'], consequent=moveDirection['down']))
-        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'], consequent=moveDirection['down'])) # prefer up when centered
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'], consequent=moveDirection['up'])) # prefer up when centered
 
         rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'], consequent=moveDirection['right'])) # diag
         rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'], consequent=moveDirection['right']))
@@ -219,14 +219,14 @@ class Controller:
         self.fuzzy_ctrl.compute()
         move_direction = self.fuzzy_ctrl.output['moveDirection']
         instruction = None
-        if move_direction >= -45 and move_direction < 45:
+        if move_direction >= 0 and move_direction < 90:
             instruction = Action.UP
-        elif move_direction >= 45 and move_direction < 135:
+        elif move_direction >= 90 and move_direction < 180:
             instruction = Action.RIGHT
-        elif move_direction >= -135 and move_direction < -45:
-            instruction = Action.LEFT
-        else:
+        elif move_direction >= 180 and move_direction < 270:
             instruction = Action.DOWN
+        else:
+            instruction = Action.LEFT
         print("Instruction: ", instruction, cgdx, cgdy, move_direction)
         return instruction
     
@@ -247,7 +247,7 @@ class Controller:
             pR = player.get_rect()
             gR = pygame.Rect(target_x, target_y, maze.tile_size_x, maze.tile_size_y)
 
-            reached = gR.colliderect(pR)
+            reached = gR.contains(pR) # colliderect
 
             if reached:
                 self._path_index += 1
