@@ -1,3 +1,4 @@
+from email.mime import base
 from pygame.locals import *
 import pygame
 
@@ -8,7 +9,7 @@ from Controller import *
 from Player import *
 from Maze import *
 from Constants import *
-
+from Genetic import *
 
 class App:
     windowWidth = WIDTH
@@ -245,6 +246,8 @@ class App:
                 self.score += 10
             monster = self.on_monster_collision()
             if monster:
+                best_stats = solve_monster(monster, self.player)
+                self.player.set_attributes(best_stats)
                 if monster.fight(self.player):
                     self.maze.monsterList.remove(monster)
                     self.score += 100
