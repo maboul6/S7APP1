@@ -162,7 +162,7 @@ class Maze:
         for door in visible_doors:
             door_state.append(door.check_door())
         return door_state
-
+    # passer un id de porte si on veut vrm ouvrir la bonne
     def unlock_door(self, key):
         for door in self.doorList:
             if door.unlock_door(key):
