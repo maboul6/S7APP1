@@ -15,5 +15,5 @@ if __name__ == "__main__":
     # If the window is too big for the screen, uncomment the following line
     # The effect of fixed pixel algorithms has NOT BEEN TESTED. PROCEED WITH CAUTION.
     # ctypes.windll.user32.SetProcessDPIAware()
-    theAPP = App("assets/Mazes/mazeSmall_0")
+    theAPP = App("assets/Mazes/mazeSmall_1")
     theAPP.on_execute()

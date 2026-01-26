@@ -181,7 +181,6 @@ class Controller:
         moveDirection['down'] = fuzz.trimf(moveDirection.universe, [180, 225, 270])
         moveDirection['left'] = fuzz.trimf(moveDirection.universe, [270, 315, 360])
 
-
         goalDx['left'] = fuzz.trimf(goalDx.universe, [-self.perception_distance, -self.perception_distance, self.perception_distance/4])
         goalDx['center'] = fuzz.trimf(goalDx.universe, [-self.perception_distance/8, 0, self.perception_distance/8])
         goalDx['right'] = fuzz.trimf(goalDx.universe, [-self.perception_distance/4, self.perception_distance, self.perception_distance])
@@ -190,28 +189,92 @@ class Controller:
         goalDy['center'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/8, 0, self.perception_distance/8])
         goalDy['down'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/4, self.perception_distance, self.perception_distance])
 
-        wallDy['up'] = fuzz.trimf(wallDy.universe, [-20, 0, 1])
-        wallDy['down'] = fuzz.trimf(wallDy.universe, [-1, 0, 20])
-        wallDx['left'] = fuzz.trimf(wallDx.universe, [-20, 0, 1])
-        wallDx['right'] = fuzz.trimf(wallDx.universe, [-1, 0, 20])
+        wallDy['up'] = fuzz.trimf(wallDy.universe, [-5, 0, 1])
+        wallDy['down'] = fuzz.trimf(wallDy.universe, [-1, 0, 5])
+        wallDx['left'] = fuzz.trimf(wallDx.universe, [-5, 0, 1])
+        wallDx['right'] = fuzz.trimf(wallDx.universe, [-1, 0, 5])
+
+        obsDx['left'] = fuzz.trapmf(obsDx.universe, [-20, -10, 0, 0])
+        obsDx['right'] = fuzz.trapmf(obsDx.universe, [0, 0, 10, 20])
+
+        obsDy['up'] = fuzz.trapmf(obsDy.universe, [-20, -10, 0, 0])
+        obsDy['down'] = fuzz.trapmf(obsDy.universe, [0, 0, 10, 20])
 
         rules = []
-        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'], consequent=moveDirection['left'])) # diag
-        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['center'], consequent=moveDirection['left']))
-        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['down'], consequent=moveDirection['left'])) # diag
+        
+        # Vibe coded (prompt: Do all 36 permutations, make no mistakes)
+        # goalDx['left'] & goalDy['up'] with all obstacle combinations (6 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['right']))  # avoid obstacle: go opposite
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['up']))  # avoid left obs, go up
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['left']))  # avoid up obs, go left
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['left']))  # default: go to goal (left+up = left)
+        
+        # goalDx['left'] & goalDy['center'] with all obstacle combinations (4 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['center'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['down']))  # avoid left, prefer down
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['center'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['up']))  # avoid left, prefer up
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['center'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['left']))  # no conflict, go left
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['center'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['left']))  # no conflict, go left
+        
+        # goalDx['left'] & goalDy['down'] with all obstacle combinations (6 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['down'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['down']))  # avoid left obs, go down
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['down'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['right']))  # avoid obstacle: go opposite
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['down'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['left']))  # no conflict, go left
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['down'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['left']))  # avoid down obs, go left
+        
+        # goalDx['center'] & goalDy['up'] with all obstacle combinations (4 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['right']))  # avoid up, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['up']))  # no conflict, go up
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['left']))  # avoid up, go left
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['up']))  # no conflict, go up
+        
+        # goalDx['center'] & goalDy['center'] with all obstacle combinations (4 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['right']))  # avoid left+up, go opposite
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['right']))  # avoid left, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['down']))  # avoid right+up, go down
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['up']))  # default: prefer up
+        
+        # goalDx['center'] & goalDy['down'] with all obstacle combinations (4 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['down']))  # no conflict, go down
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['right']))  # avoid down, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['down']))  # no conflict, go down
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['left']))  # avoid down, go left
+        
+        # goalDx['right'] & goalDy['up'] with all obstacle combinations (6 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['right']))  # avoid up obs, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['right']))  # default: go to goal (right+up = right)
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['left']))  # avoid obstacle: go opposite
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['up']))  # avoid right obs, go up
+        
+        # goalDx['right'] & goalDy['center'] with all obstacle combinations (4 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['right']))  # no conflict, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['right']))  # no conflict, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['down']))  # avoid right, prefer down
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['up']))  # avoid right, prefer up
+        
+        # goalDx['right'] & goalDy['down'] with all obstacle combinations (6 rules)
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'] & obsDx['left'] & obsDy['up'], consequent=moveDirection['right']))  # no conflict, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'] & obsDx['left'] & obsDy['down'], consequent=moveDirection['right']))  # avoid down obs, go right
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'] & obsDx['right'] & obsDy['up'], consequent=moveDirection['down']))  # avoid right obs, go down
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'] & obsDx['right'] & obsDy['down'], consequent=moveDirection['left']))  # avoid obstacle: go opposite
 
-        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'], consequent=moveDirection['up']))
-        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'], consequent=moveDirection['down']))
-        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'], consequent=moveDirection['up'])) # prefer up when centered
-
-        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'], consequent=moveDirection['right'])) # diag
-        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'], consequent=moveDirection['right']))
-        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'], consequent=moveDirection['right'])) # diag
-
+        # Wall avoidance rules
         rules.append(ctrl.Rule(antecedent=wallDy['up'], consequent=moveDirection['down']))
         rules.append(ctrl.Rule(antecedent=wallDy['down'], consequent=moveDirection['up']))
         rules.append(ctrl.Rule(antecedent=wallDx['left'], consequent=moveDirection['right']))
         rules.append(ctrl.Rule(antecedent=wallDx['right'], consequent=moveDirection['left']))
+
+        # Goal-only fallback rules (when obstacles are far, ignore them)
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'], consequent=moveDirection['left']))
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['center'], consequent=moveDirection['left']))
+        rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['down'], consequent=moveDirection['left']))
+        
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['up'], consequent=moveDirection['up']))
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['center'], consequent=moveDirection['up']))  # default up when centered
+        rules.append(ctrl.Rule(antecedent=goalDx['center'] & goalDy['down'], consequent=moveDirection['down']))
+        
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['up'], consequent=moveDirection['right']))
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'], consequent=moveDirection['right']))
+        rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'], consequent=moveDirection['right']))
 
         for r in rules:
             r.and_func = np.fmin
@@ -229,6 +292,8 @@ class Controller:
 
         cgdx = np.clip(gdx, -self.perception_distance, self.perception_distance)
         cgdy = np.clip(gdy, -self.perception_distance, self.perception_distance)
+        cbdx = np.clip(bdx, -self.perception_distance, self.perception_distance)
+        cbdy = np.clip(bdy, -self.perception_distance, self.perception_distance)
         wdx = np.clip(wall_dx, -self.perception_distance, self.perception_distance)
         wdy = np.clip(wall_dy, -self.perception_distance, self.perception_distance)
 
@@ -236,6 +301,8 @@ class Controller:
         self.fuzzy_ctrl.input['wallDy'] = wdy
         self.fuzzy_ctrl.input['goalDx'] = cgdx
         self.fuzzy_ctrl.input['goalDy'] = cgdy
+        self.fuzzy_ctrl.input['obsDx'] = cbdx
+        self.fuzzy_ctrl.input['obsDy'] = cbdy
 
         self.fuzzy_ctrl.compute()
         move_direction = self.fuzzy_ctrl.output['moveDirection']
@@ -248,7 +315,7 @@ class Controller:
             instruction = Action.DOWN
         else:
             instruction = Action.LEFT
-        print("Instruction: ", instruction, wdx, wdy)
+        print("Instruction: ", instruction, cgdx, cgdy, cbdx, cbdy, move_direction)
         return instruction
     
     def tile_to_pixel_center(self, tile, maze):
@@ -274,4 +341,4 @@ class Controller:
                 self._path_index += 1
                 return
             return
-           
+
