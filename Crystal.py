@@ -1,5 +1,6 @@
 from swiplserver import PrologMQI
 import ast
+PROLOG_FILE = "C:/Users/pofor/S7/APP1/S7APP1/Prolog/cristaux.pl"
 
 def clean_state(state):
     state = state[0]
@@ -13,7 +14,7 @@ def clean_state(state):
 def python_list_to_prolog_list(py_list):
     items = []
     for x in py_list:
-        x = str(x).replace("'", "''")   # escape pour Prolog
+        x = str(x).replace("'", "''")
         items.append(f"'{x}'")
     return "[" + ",".join(items) + "]"
 
@@ -23,7 +24,7 @@ def remove_crystal(state):
 
     with PrologMQI() as mqi:
         with mqi.create_thread() as prolog:
-            prolog.query("consult('prolog/cristaux.pl').")
+            prolog.query(f"consult('Prolog/Cristaux.pl').")
             query_str = f"enlever_position({prolog_list}, P)."
 
             print("STATE repr:", repr(state))
