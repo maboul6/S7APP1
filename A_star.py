@@ -28,7 +28,7 @@ def find_symbol(maze, symbol):
     raise ValueError(f"Symbol '{symbol}' not found in maze")
 
 def convert_maze(mazefile):
-    free_cells = {'0', 'E', 'S', 'T', 'C', 'D', 'M', 'O'}
+    free_cells = {'0', 'E', 'S', 'T', 'C','O','D','M'}
 
     maze = []
     for row in mazefile:
