@@ -169,15 +169,17 @@ class Controller:
         goalDx = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'goalDx')
         goalDy = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'goalDy')
 
+        obsDx = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'obsDx')
+        obsDy = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'obsDy')
+
+        wallDx = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'wallDx')
+        wallDy = ctrl.Antecedent(np.arange(-self.perception_distance, self.perception_distance + 1, 1), 'wallDy')
+
         moveDirection = ctrl.Consequent(np.linspace(0, 360, 361), 'moveDirection', defuzzify_method='mom')
-        # down_left  = fuzz.trimf(moveDirection.universe, [-180, -180, -135])
-        # down_right = fuzz.trimf(moveDirection.universe, [135, 180, 180])
-        # moveDirection['down'] = np.fmax(down_left, down_right)
         moveDirection['up'] = fuzz.trimf(moveDirection.universe, [0, 45, 90])
         moveDirection['right'] = fuzz.trimf(moveDirection.universe, [90, 135, 180])
         moveDirection['down'] = fuzz.trimf(moveDirection.universe, [180, 225, 270])
         moveDirection['left'] = fuzz.trimf(moveDirection.universe, [270, 315, 360])
-        # moveDirection['down'] = fuzz.trapmf(moveDirection.universe, [134, 180, 180, 180])
 
 
         goalDx['left'] = fuzz.trimf(goalDx.universe, [-self.perception_distance, -self.perception_distance, self.perception_distance/4])
@@ -187,6 +189,11 @@ class Controller:
         goalDy['up'] = fuzz.trimf(goalDy.universe, [-self.perception_distance, -self.perception_distance, self.perception_distance/4])
         goalDy['center'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/8, 0, self.perception_distance/8])
         goalDy['down'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/4, self.perception_distance, self.perception_distance])
+
+        wallDy['up'] = fuzz.trimf(wallDy.universe, [-20, 0, 1])
+        wallDy['down'] = fuzz.trimf(wallDy.universe, [-1, 0, 20])
+        wallDx['left'] = fuzz.trimf(wallDx.universe, [-20, 0, 1])
+        wallDx['right'] = fuzz.trimf(wallDx.universe, [-1, 0, 20])
 
         rules = []
         rules.append(ctrl.Rule(antecedent=goalDx['left'] & goalDy['up'], consequent=moveDirection['left'])) # diag
@@ -201,6 +208,11 @@ class Controller:
         rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['center'], consequent=moveDirection['right']))
         rules.append(ctrl.Rule(antecedent=goalDx['right'] & goalDy['down'], consequent=moveDirection['right'])) # diag
 
+        rules.append(ctrl.Rule(antecedent=wallDy['up'], consequent=moveDirection['down']))
+        rules.append(ctrl.Rule(antecedent=wallDy['down'], consequent=moveDirection['up']))
+        rules.append(ctrl.Rule(antecedent=wallDx['left'], consequent=moveDirection['right']))
+        rules.append(ctrl.Rule(antecedent=wallDx['right'], consequent=moveDirection['left']))
+
         for r in rules:
             r.and_func = np.fmin
             r.or_func = np.fmax
@@ -212,10 +224,19 @@ class Controller:
 
 
     def call_fuzzy_logic(self, u, d, l, r, bdx, bdy, gdx, gdy):
+        wall_dx = -l if np.abs(l) <= np.abs(r) else r
+        wall_dy = -u if np.abs(u) <= np.abs(d) else d
+
         cgdx = np.clip(gdx, -self.perception_distance, self.perception_distance)
-        self.fuzzy_ctrl.input['goalDx'] = cgdx
         cgdy = np.clip(gdy, -self.perception_distance, self.perception_distance)
+        wdx = np.clip(wall_dx, -self.perception_distance, self.perception_distance)
+        wdy = np.clip(wall_dy, -self.perception_distance, self.perception_distance)
+
+        self.fuzzy_ctrl.input['wallDx'] = wdx
+        self.fuzzy_ctrl.input['wallDy'] = wdy
+        self.fuzzy_ctrl.input['goalDx'] = cgdx
         self.fuzzy_ctrl.input['goalDy'] = cgdy
+
         self.fuzzy_ctrl.compute()
         move_direction = self.fuzzy_ctrl.output['moveDirection']
         instruction = None
@@ -227,7 +248,7 @@ class Controller:
             instruction = Action.DOWN
         else:
             instruction = Action.LEFT
-        print("Instruction: ", instruction, cgdx, cgdy, move_direction)
+        print("Instruction: ", instruction, wdx, wdy)
         return instruction
     
     def tile_to_pixel_center(self, tile, maze):
