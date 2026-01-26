@@ -25,6 +25,7 @@ def remove_crystal(state):
     with PrologMQI() as mqi:
         with mqi.create_thread() as prolog:
             prolog.query(f"consult('Prolog/Cristaux.pl').")
+            #prolog.query(f"consult('{PROLOG_FILE}').")
             query_str = f"enlever_position({prolog_list}, P)."
 
             print("STATE repr:", repr(state))
