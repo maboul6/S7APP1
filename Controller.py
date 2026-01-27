@@ -204,16 +204,18 @@ class Controller:
         goalDy['center'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/4, 0, self.perception_distance/4])
         goalDy['down'] = fuzz.trimf(goalDy.universe, [-self.perception_distance/4, self.perception_distance, self.perception_distance])
 
-        wallDy['up'] = fuzz.trapmf(wallDy.universe, [-size_y, -size_y/2, 0, 0])
+        wallDy['up'] = fuzz.trapmf(wallDy.universe, [-size_y, -size_y/2, 0, 1])
         wallDy['down'] = fuzz.trapmf(wallDy.universe, [-1, 0, size_y/2, size_y])
         wallDx['left'] = fuzz.trapmf(wallDx.universe, [-size_x, -size_x/2, 0, 1])
         wallDx['right'] = fuzz.trapmf(wallDx.universe, [-1, 0, size_x/2, size_x])
 
-        obsDx['left'] = fuzz.trapmf(obsDx.universe, [-20, -10, 0, 0])
-        obsDx['right'] = fuzz.trapmf(obsDx.universe, [0, 0, 10, 20])
+        obsDx['left'] = fuzz.trapmf(obsDx.universe, [-size_x, -size_x/2, 0, 1])
+        obsDx['center'] = fuzz.trapmf(obsDx.universe, [-size_x/4, 0, 1, size_x/4])
+        obsDx['right'] = fuzz.trapmf(obsDx.universe, [-1, 0, size_x/2, size_x])
 
-        obsDy['up'] = fuzz.trapmf(obsDy.universe, [-20, -10, 0, 0])
-        obsDy['down'] = fuzz.trapmf(obsDy.universe, [0, 0, 10, 20])
+        obsDy['up'] = fuzz.trapmf(obsDy.universe, [-size_y, -size_y/2, -1, 1])
+        obsDy['center'] = fuzz.trapmf(obsDy.universe, [-size_y/4, -1, 1, size_y/4])
+        obsDy['down'] = fuzz.trapmf(obsDy.universe, [-1, 0, size_y/2, size_y])
 
         rules = []
         # Goal-based rules
@@ -230,6 +232,12 @@ class Controller:
         rules.append(ctrl.Rule(antecedent=wallDy['down'], consequent=moveY['up']))
         rules.append(ctrl.Rule(antecedent=wallDx['left'], consequent=moveX['right']))
         rules.append(ctrl.Rule(antecedent=wallDx['right'], consequent=moveX['left']))
+
+        # Obstacle avoidance rules
+        rules.append(ctrl.Rule(antecedent=obsDy['up'], consequent=moveY['down']))
+        rules.append(ctrl.Rule(antecedent=obsDy['down'], consequent=moveY['up']))
+        rules.append(ctrl.Rule(antecedent=obsDx['left'], consequent=moveX['right']))
+        rules.append(ctrl.Rule(antecedent=obsDx['right'], consequent=moveX['left']))
         
         # Combined wall + goal rules for better navigation
         rules.append(ctrl.Rule(antecedent=wallDy['up'] & goalDx['left'], consequent=(moveY['down'], moveX['left'])))
@@ -241,6 +249,17 @@ class Controller:
         rules.append(ctrl.Rule(antecedent=wallDx['left'] & goalDy['down'], consequent=(moveX['right'], moveY['down'])))
         rules.append(ctrl.Rule(antecedent=wallDx['right'] & goalDy['up'], consequent=(moveX['left'], moveY['up'])))
         rules.append(ctrl.Rule(antecedent=wallDx['right'] & goalDy['down'], consequent=(moveX['left'], moveY['down'])))
+
+        # combined obstacle + goal rules
+        rules.append(ctrl.Rule(antecedent=obsDy['up'] & goalDx['left'], consequent=(moveY['down'], moveX['left'])))
+        rules.append(ctrl.Rule(antecedent=obsDy['up'] & goalDx['right'], consequent=(moveY['down'], moveX['right'])))
+        rules.append(ctrl.Rule(antecedent=obsDy['down'] & goalDx['left'], consequent=(moveY['up'], moveX['left'])))
+        rules.append(ctrl.Rule(antecedent=obsDy['down'] & goalDx['right'], consequent=(moveY['up'], moveX['right'])))
+
+        rules.append(ctrl.Rule(antecedent=obsDx['left'] & goalDy['up'], consequent=(moveX['right'], moveY['up'])))
+        rules.append(ctrl.Rule(antecedent=obsDx['left'] & goalDy['down'], consequent=(moveX['right'], moveY['down'])))
+        rules.append(ctrl.Rule(antecedent=obsDx['right'] & goalDy['up'], consequent=(moveX['left'], moveY['up'])))
+        rules.append(ctrl.Rule(antecedent=obsDx['right'] & goalDy['down'], consequent=(moveX['left'], moveY['down'])))
 
         for r in rules:
             r.and_func = np.fmin
@@ -284,22 +303,22 @@ class Controller:
 
         print("\n========== FUZZY LOGIC DEBUG ==========")
         print(f"Raw distances - u:{u:.1f} d:{d:.1f} l:{l:.1f} r:{r:.1f}")
-        print(f"Inputs - wallDx:{wdx:.1f} wallDy:{wdy:.1f} goalDx:{cgdx:.1f} goalDy:{cgdy:.1f}")
+        print(f"Inputs - wallDx:{wdx:.1f} wallDy:{wdy:.1f} goalDx:{cgdx:.1f} goalDy:{cgdy:.1f} obsDx:{cbdx:.1f} obsDy:{cbdy:.1f}")
 
         # Store input values for debugging
-        input_values = {'wallDx': wdx, 'wallDy': wdy, 'goalDx': cgdx, 'goalDy': cgdy}
+        input_values = {'wallDx': wdx, 'wallDy': wdy, 'goalDx': cgdx, 'goalDy': cgdy, 'obsDx': cbdx, 'obsDy': cbdy}
 
         self.fuzzy_ctrl.input['wallDx'] = wdx
         self.fuzzy_ctrl.input['wallDy'] = wdy
         self.fuzzy_ctrl.input['goalDx'] = cgdx
         self.fuzzy_ctrl.input['goalDy'] = cgdy
-        # self.fuzzy_ctrl.input['obsDx'] = cbdx
-        # self.fuzzy_ctrl.input['obsDy'] = cbdy
+        self.fuzzy_ctrl.input['obsDx'] = cbdx
+        self.fuzzy_ctrl.input['obsDy'] = cbdy
 
         # Debug membership values
         print("\n--- Membership Values ---")
         for var in self.fuzzy_ctrl.ctrl.fuzzy_variables:
-            if var.label in ['wallDx', 'wallDy', 'goalDx', 'goalDy']:
+            if var.label in ['wallDx', 'wallDy', 'goalDx', 'goalDy', 'obsDx', 'obsDy']:
                 print(f"{var.label}: (value={input_values[var.label]:.1f}, range=[{var.universe[0]:.1f}, {var.universe[-1]:.1f}])")
                 for term_name, term_mf in var.terms.items():
                     input_val = input_values[var.label]
