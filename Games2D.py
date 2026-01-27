@@ -180,6 +180,7 @@ class App:
             if self.player.get_rect().colliderect(door.rect):
                 state = self.maze.look_at_door(self.player, self._display_surf)
                 key = remove_crystal(state)
+                print(state)
                 print(key)
                 self.maze.unlock_door(key)
                 return True
