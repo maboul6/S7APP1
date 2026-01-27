@@ -2,6 +2,11 @@ from swiplserver import PrologMQI
 import ast
 PROLOG_FILE = "C:/Users/pofor/S7/APP1/S7APP1/Prolog/cristaux.pl"
 
+#Utilisé Chatgpt pour les fonctions clean_state et python_list_to_prolog_list.
+#Chatgptv5.2. Prompt: Fait une fonction qui prend entrée une liste de la forme suivante:
+#[['gold', 'blue', 'blue', 'yellow', '', '', '']] et converti en format accepté par prolog.
+#La liste continent des NULL ou des '', enlèves-les.
+
 def clean_state(state):
     state = state[0]
     cleaned = []
@@ -24,8 +29,9 @@ def remove_crystal(state):
 
     with PrologMQI() as mqi:
         with mqi.create_thread() as prolog:
-            prolog.query(f"consult('Prolog/Cristaux.pl').")
-            #prolog.query(f"consult('{PROLOG_FILE}').")
+            #prolog.query(f"consult('Prolog/Cristaux.pl').")
+            #Pour les tests
+            prolog.query(f"consult('{PROLOG_FILE}').")
             query_str = f"enlever_position({prolog_list}, P)."
 
             print("STATE repr:", repr(state))

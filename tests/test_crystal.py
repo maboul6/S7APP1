@@ -1,13 +1,8 @@
-#STATES = [['gold', 'red', 'red', 'blue', 'yellow', '', ''],
-#              ['gold', 'yellow', 'black', 'blue', 'black', 'white', 'black'],
-#              ['silver', 'black', 'red', 'blue', 'white', '', ''],
-#              ['silver', 'red', 'red', 'white', '', '', ''],
-#              ['bronze', 'yellow', 'red', 'yellow', 'blue', 'black', ''],
-#              ['bronze', 'blue', 'black', 'red', 'yellow', 'black', 'white']]
-
 STATES_COMPTEUR = [['blue', 'blue', 'blue', 'yellow'],
               ['yellow', 'blue', 'blue', 'black', 'white', 'black'],
               ['black', 'red', 'blue', 'white']]
+
+CONTIENT = [True,True,False]
 
 COUNT = ['3','2','1']
 
@@ -35,7 +30,7 @@ KEYS = ['first',
 
 PROLOG_FILE = "C:/Users/pofor/S7/APP1/S7APP1/Prolog/cristaux.pl"
 
-import traceback
+
 from swiplserver import PrologMQI
 from Crystal import remove_crystal, clean_state, python_list_to_prolog_list
 
@@ -44,6 +39,18 @@ def test_crystal_states():
 
         result = remove_crystal([state])
         assert result == KEYS[i]
+
+def test_contient():
+    for i, state_compteur in enumerate(STATES_COMPTEUR):
+        list_state = python_list_to_prolog_list(state_compteur)
+
+        with PrologMQI() as mqi:
+            with mqi.create_thread() as prolog:
+                prolog.query(f"consult('{PROLOG_FILE}').")
+                query_str = f"contient(yellow, {list_state})."
+                result = prolog.query(query_str)
+
+        assert bool(result) == bool(CONTIENT[i])
 
 def test_compteur():
     for i, state_compteur in enumerate(STATES_COMPTEUR):
@@ -57,9 +64,12 @@ def test_compteur():
 
         assert int(result[0]["N"]) == int(COUNT[i])
 
+#Utilisé Chatgpt pour le main. Chatgpt version 5.2. Prompt: Fait une fonction
+#main pour les fonctions suivantes dans le but de tester: *copier-coller des 3 fonctions ci-haut
 
 def main():
     tests = [
+        ("test_contient", test_contient),
         ("test_crystal_states", test_crystal_states),
         ("test_compteur", test_compteur),
     ]
