@@ -19,8 +19,6 @@ class Genetic:
         self.best_fitness = -1e18
         self.best_rounds = -1
         self.best_cum = -1e18
-        
-        # Track diversity
         self.diversity_history = []
 
     def init_population(self, seed=None):
@@ -33,6 +31,7 @@ class Genetic:
             self.population[0] = seed[:]
 
     def calculate_diversity(self):
+        # Utilisation d'IAG ici pour m'aider avec la syntaxe
         """Calculate population diversity"""
         if len(self.population) < 2:
             return 0
@@ -80,34 +79,33 @@ class Genetic:
         return found4
 
     def select_parent(self, k=4):
+        # Fonction utilitaire suggérée par IA générative
         candidates = random.sample(range(self.pop_size), k)
         best = max(candidates, key=lambda i: self.fitness[i][0])
         return self.population[best][:]
 
     def crossover(self, p1, p2):
         """Multiple crossover strategies"""
+        # aide par IA générative pour suggérer des stratégies de croisement
         strategy = random.random()
         
         if strategy < 0.3:
-            # Uniform crossover
             return [a if random.random() < 0.5 else b for a, b in zip(p1, p2)]
         elif strategy < 0.6:
-            # Arithmetic crossover
             alpha = random.uniform(0.3, 0.7)
             return [int(alpha * a + (1-alpha) * b) for a, b in zip(p1, p2)]
         elif strategy < 0.8:
-            # Two-point crossover
             points = sorted(random.sample(range(NUM_ATTRIBUTES), 2))
             child = p1[:]
             child[points[0]:points[1]] = p2[points[0]:points[1]]
             return child
         else:
-            # Blend crossover with wider range
             return [int(random.uniform(min(a, b) - abs(a-b)*0.2, 
                                        max(a, b) + abs(a-b)*0.2))
                     for a, b in zip(p1, p2)]
 
     def mutate(self, indiv):
+        # Aide par IA générative pour la me permettre de briser le plateau obtenu à 3 combats remportés vs le monstre
         if random.random() > self.mutation_prob:
             return indiv
 
@@ -183,6 +181,7 @@ class Genetic:
 
     def focused_exploration(self, monster, base_player, center, tries=15000):
         """Systematic exploration around current best"""
+        # Fonction générée par IA générative pour m'aider à briser le plateau des 3 combats remportés
         best = center[:]
         p = copy.deepcopy(base_player)
         p.attributes = best
@@ -241,13 +240,13 @@ class Genetic:
         last_best_cum = -1e18
         restart_count = 0
 
+        # Aide par IA générative pour la stagnation et suggestion de valeurs de probabilité de mutation
         for gen in range(generations):
             found4 = self.evaluate(monster, base_player)
             if found4:
                 print("Found solution with 4 rounds!")
                 break
 
-            # Detect stagnation
             if self.best_rounds == last_best_rounds and abs(self.best_cum - last_best_cum) < 1e-6:
                 stagnant += 1
             else:
@@ -255,7 +254,6 @@ class Genetic:
                 last_best_rounds = self.best_rounds
                 last_best_cum = self.best_cum
 
-            # Adaptive mutation rate
             if stagnant >= 15:
                 self.mutation_prob = min(0.4, self.base_mutation_prob * 2.0)
             elif stagnant >= 10:
@@ -263,7 +261,6 @@ class Genetic:
             else:
                 self.mutation_prob = self.base_mutation_prob
 
-            # Check diversity
             if len(self.diversity_history) > 5:
                 recent_div = self.diversity_history[-5:]
                 avg_div = sum(recent_div) / len(recent_div)
@@ -275,7 +272,7 @@ class Genetic:
 
             self.next_generation()
 
-            # Aggressive diversification for round 3 plateau
+            # Aide par IA générative pour la diversification
             if stagnant >= 18 and self.best_rounds == 3:
                 for i in range(self.pop_size * 2 // 3):
                     self.population[-(i+1)] = [random.randint(MIN_A, MAX_A) 
@@ -286,8 +283,6 @@ class Genetic:
         # Post-evolution refinement
         if self.best_rounds >= 3:
             print(f"\n=== Post-evolution refinement (best={self.best_rounds}) ===")
-            
-            # Multiple focused searches
             if self.best_rounds == 3:
                 for attempt in range(3):
                     print(f"\nFocused search attempt {attempt + 1}/3")
@@ -303,7 +298,6 @@ class Genetic:
                     if r == 4:
                         break
             
-            # Local refinement with multiple step sizes
             for step, tries in [(300, 10000), (150, 10000), (60, 10000)]:
                 center, r, c = self.local_search_around(
                     monster, base_player, self.best_individual, tries=tries, step=step
@@ -323,6 +317,7 @@ class Genetic:
         return self.best_individual
 
     def local_search_around(self, monster, base_player, center, tries=3000, step=120):
+        # Fonction générée par IA générative pour m'aider à briser le plateau des 3 combats remportés
         best = center[:]
         p = copy.deepcopy(base_player)
         p.attributes = best
@@ -351,6 +346,7 @@ class Genetic:
 
 def solve_monster(monster, player, attempts=10):
     """Solve with multiple attempts and progressive strategies"""
+    # Formatting des logs par IA générative
     best_stats = None
     best_r = -1
     best_c = -1e18
@@ -360,7 +356,6 @@ def solve_monster(monster, player, attempts=10):
         print(f"ATTEMPT {t+1}/{attempts}")
         print(f"{'='*60}")
         
-        # Progressive parameter tuning
         pop = min(250 + (t * 25), 450)
         mut = min(0.15 + (t * 0.02), 0.35)
         gens = 160 + (t * 10)
