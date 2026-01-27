@@ -1,0 +1,67 @@
+Objectif
+Vérifier le bon fonctionnement de la classe Genetic et de ses méthodes principales de manière déterministe.
+
+Périmètre
+Méthodes testées :
+- init_population
+- calculate_diversity
+- evaluate
+- select_parent
+- crossover
+- mutate
+- next_generation
+- random_restart
+
+
+Stratégie
+
+Tests unitaires avec pytest
+
+Contrôle de l’aléatoire via monkeypatch
+
+Mock via DummyMonster et DummyPlayer
+
+Patch des constantes (NUM_ATTRIBUTES, MIN_A, MAX_A)
+
+Cas de test principaux
+
+CT-01 Initialisation population
+Vérifie la taille, le nombre d’attributs et le respect des bornes.
+
+CT-02 Initialisation avec seed
+Vérifie que le seed remplace le premier individu.
+
+CT-03 Diversité population triviale
+Retourne 0 pour population vide ou d’un seul individu.
+
+CT-04 Diversité population simple
+Calcule correctement la distance entre deux individus.
+
+CT-05 Évaluation et meilleur individu
+Met à jour fitness, best_individual, best_rounds et détecte found4.
+
+CT-06 Sélection parent (tournoi)
+Sélectionne l’individu le plus apte et retourne une copie.
+
+CT-07 Crossover uniforme
+Combine les gènes des deux parents correctement.
+
+CT-08 Crossover arithmétique
+Calcule la moyenne pondérée des gènes.
+
+CT-09 Crossover deux points
+Échange correctement un segment entre deux parents.
+
+CT-10 Mutation sans effet
+Retourne le même individu si aucune mutation.
+
+CT-11 Mutation agressive
+Modifie plusieurs attributs en respectant les bornes.
+
+CT-12 Génération suivante
+Conserve les individus élites.
+
+CT-13 Random restart
+Conserve les meilleurs individus et réinitialise le reste.
+
+Critères d’acceptation: tous les tests passent
